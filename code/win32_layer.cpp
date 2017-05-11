@@ -101,16 +101,6 @@ V3Transform(v3 Vec, matrix4x4 Mat)
 #define SCREEN_WIDTH  800
 #define SCREEN_HEIGHT 600
 
-struct render_fuctions
-{
-    
-};
-
-struct render_data 
-{
-    
-};
-
 #if OPENGL
 #include "opengl.cpp"
 #endif
@@ -217,14 +207,21 @@ WinMain(HINSTANCE Instance,
             }
             
             HDC DeviceContext = GetDC(Window);
+#if DIRECTX
             RenderFrame(TargetSecondsPerFrame);
-            
+#endif
+#if OPENGL
+            RenderFrame(DeviceContext, WindowWidth, WindowHeight,
+                        &Functions, &Data);
+#endif
             ReleaseDC(Window, DeviceContext);
 
         }
         
     }
 
+#if DIRECTX
     CleanD3D();
+#endif 
     return 0; 
 }

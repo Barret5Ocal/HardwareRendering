@@ -9,7 +9,6 @@
 
 #include "opengl_header.h"
 
-static bool Running = 1;
 
 GLuint CompileShaders(render_fuctions *GLFuctions)
 {
@@ -115,7 +114,7 @@ Win32InitOpenGL(HWND Window, render_fuctions *Functions, GLuint *Program)
     
 }
 
-void DisplayFrame(HDC DeviceContext, int WindowWidth, int WindowHeight,
+void RenderFrame(HDC DeviceContext, int WindowWidth, int WindowHeight,
                   render_fuctions *GLFuctions, render_data *Data)
 {
     glViewport(0, 0, WindowWidth, WindowHeight);
@@ -127,7 +126,7 @@ void DisplayFrame(HDC DeviceContext, int WindowWidth, int WindowHeight,
 
     GLFuctions->glClearBufferfv(GL_COLOR, 0, Color);
 
-    GLFuctions->glUseProgram(Program); 
+    GLFuctions->glUseProgram(Data->Program); 
 
     GLFuctions->glDrawArrays(GL_TRIANGLES, 0, 3);
     
