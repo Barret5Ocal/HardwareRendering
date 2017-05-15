@@ -13,6 +13,7 @@
 
 #include "load_image.h"
 
+
 typedef uint32_t uint32;
 typedef int32_t int32; 
 
@@ -101,17 +102,17 @@ V3Transform(v3 Vec, matrix4x4 Mat)
 #define SCREEN_WIDTH  800
 #define SCREEN_HEIGHT 600
 
+
+
 #if OPENGL
 #include "opengl.cpp"
-#endif
-
-#if VULKAN
+#elif VULKAN
 #include "vulkan.cpp"
-#endif
-
-#if DIRECTX
+#elif DIRECTX
 #include "2D_directx.cpp"
 #endif
+
+
 
 // this is the main message handler for the program
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -174,11 +175,12 @@ WinMain(HINSTANCE Instance,
         render_data Data = {};
 
         loaded_bitmap Bitmap = LoadImage("Wood.png");
-        
+
 #if OPENGL
         GLuint Program = 0;
         Win32InitOpenGL(Window, &Functions, &Program);
-        Data.Program = Program; 
+        Data.Program = Program;
+        Data.Texture = Bitmap; 
 #endif
 #if VULKAN
         Win32InitVulkan(Instance, Window);

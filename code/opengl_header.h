@@ -34,6 +34,7 @@ typedef void (APIENTRYP PFNGLDRAWARRAYSEXTPROC) (GLenum mode, GLint first, GLsiz
 struct render_data
 {
     GLuint Program;
+    loaded_bitmap Texture; 
 };
 
 struct render_fuctions

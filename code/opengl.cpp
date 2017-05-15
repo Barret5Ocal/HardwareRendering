@@ -58,6 +58,8 @@ GLuint CompileShaders(render_fuctions *GLFuctions)
         
 }
 
+GLuint GlobalBlitTextureHandle;
+
 void
 Win32InitOpenGL(HWND Window, render_fuctions *Functions, GLuint *Program)
 {
@@ -66,6 +68,7 @@ Win32InitOpenGL(HWND Window, render_fuctions *Functions, GLuint *Program)
     PIXELFORMATDESCRIPTOR DesiredPixelFormat = {};
     DesiredPixelFormat.nSize = sizeof(DesiredPixelFormat);
     DesiredPixelFormat.nVersion = 1;
+    DesiredPixelFormat.iPixelType = PFD_TYPE_RGBA;
     DesiredPixelFormat.dwFlags = PFD_SUPPORT_OPENGL|PFD_DRAW_TO_WINDOW|PFD_DOUBLEBUFFER;
     DesiredPixelFormat.cColorBits = 32;
     DesiredPixelFormat.cAlphaBits = 8;
@@ -81,7 +84,7 @@ Win32InitOpenGL(HWND Window, render_fuctions *Functions, GLuint *Program)
     HGLRC OpenGLRC = wglCreateContext(WindowDC);
     if(wglMakeCurrent(WindowDC, OpenGLRC))
     {
-        
+        glGenTextures(1, &GlobalBlitTextureHandle);
     }
     else
     {
@@ -105,13 +108,13 @@ Win32InitOpenGL(HWND Window, render_fuctions *Functions, GLuint *Program)
     Functions->glDeleteProgram = (PFNGLDELETEPROGRAMPROC)GetAnyGLFuncAddress("glDeleteProgram");
     Functions->glUseProgram = (PFNGLUSEPROGRAMPROC)GetAnyGLFuncAddress("glUseProgram");      
     Functions->glDrawArrays = (PFNGLDRAWARRAYSEXTPROC)GetAnyGLFuncAddress("glDrawArrays");
-    
+    /* 
     GLuint VertexArrayObject = 0;
         
     *Program = CompileShaders(Functions);
     Functions->glCreateVertexArrays(1, &VertexArrayObject);
     Functions->glBindVertexArray(VertexArrayObject);
-    
+    */    
 }
 
 void RenderFrame(HDC DeviceContext, int WindowWidth, int WindowHeight,
@@ -124,11 +127,60 @@ void RenderFrame(HDC DeviceContext, int WindowWidth, int WindowHeight,
                        0.2f,
                        0.0f, 1.0f};
 
-    GLFuctions->glClearBufferfv(GL_COLOR, 0, Color);
+    glBindTexture(GL_TEXTURE_2D, GlobalBlitTextureHandle);
 
+    loaded_bitmap Bitmap = Data->Texture;
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, Bitmap.Width, Bitmap.Height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+                 Bitmap.Pixel);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+    glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+    glEnable(GL_TEXTURE_2D);
+
+    glClearColor(Color[0], Color[1], Color[2], Color[3]);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    glMatrixMode(GL_TEXTURE);
+    glLoadIdentity();
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+
+    glBegin(GL_TRIANGLES);
+
+    float P = 1.0f;
+
+    glTexCoord2f(0.0f, 0.0f);
+    glVertex2f(-P, -P);
+
+    glTexCoord2f(1.0f, 0.0f);
+    glVertex2f(P, -P);
+
+    glTexCoord2f(1.0f, 1.0f);
+    glVertex2f(P, P);
+
+    glTexCoord2f(0.0f, 0.0f);
+    glVertex2f(-P, -P);
+
+    glTexCoord2f(1.0f, 1.0f);
+    glVertex2f(P, P);
+
+    glTexCoord2f(0.0f, 1.0f);
+    glVertex2f(-P, P);
+
+    glEnd();
+    //GLFuctions->glClearBufferfv(GL_COLOR, 0, Color);
+/*
     GLFuctions->glUseProgram(Data->Program); 
 
     GLFuctions->glDrawArrays(GL_TRIANGLES, 0, 3);
-    
+*/    
     SwapBuffers(DeviceContext);
 }
