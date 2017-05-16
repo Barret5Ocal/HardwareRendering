@@ -97,7 +97,9 @@ union matrix4x4
         float        _41, _42, _43, _44;
 
     };
-    float m[4][4];
+    float e[4][4];
+    float m[16];
+    
 };
 
 inline v3

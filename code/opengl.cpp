@@ -58,7 +58,7 @@ GLuint CompileShaders(render_fuctions *GLFuctions)
         
 }
 
-GLuint GlobalBlitTextureHandle;
+static unsigned int TextureHandleCount = 0;
 
 void
 Win32InitOpenGL(HWND Window, render_fuctions *Functions, GLuint *Program)
@@ -84,7 +84,7 @@ Win32InitOpenGL(HWND Window, render_fuctions *Functions, GLuint *Program)
     HGLRC OpenGLRC = wglCreateContext(WindowDC);
     if(wglMakeCurrent(WindowDC, OpenGLRC))
     {
-        glGenTextures(1, &GlobalBlitTextureHandle);
+        //glGenTextures(1, &GlobalBlitTextureHandle);
     }
     else
     {
@@ -117,33 +117,75 @@ Win32InitOpenGL(HWND Window, render_fuctions *Functions, GLuint *Program)
     */    
 }
 
+void ClearScreen(v4 Color)
+{
+    //glDisable(GL_TEXTURE_2D);
+    glClearColor(Color.E[0], Color.E[1], Color.E[2], Color.E[3]);
+    glClear(GL_COLOR_BUFFER_BIT);
+    //glEnable(GL_TEXTURE_2D);
+}
+
+void DrawBitmap(loaded_bitmap *Bitmap, float X, float Y, v4 Color)
+{
+    if(Bitmap->Handle)
+    {
+        glBindTexture(GL_TEXTURE_2D, Bitmap->Handle);
+    }
+    else 
+    {
+        Bitmap->Handle = ++TextureHandleCount;
+        glBindTexture(GL_TEXTURE_2D, Bitmap->Handle);
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, Bitmap->Width, Bitmap->Height, 0,
+                     GL_RGBA, GL_UNSIGNED_BYTE, Bitmap->Pixel);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+        glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+        
+    }
+    
+    v2 MinP = {X, Y};
+    v2 MaxP = {X + Bitmap->Width, Y + Bitmap->Height};
+    
+    glBegin(GL_TRIANGLES);
+
+    glColor4f(Color.r, Color.g, Color.b, Color.a);
+
+     // NOTE(casey): Lower triangle
+    glTexCoord2f(0.0f, 0.0f);
+    glVertex2f(MinP.x, MinP.y);
+
+    glTexCoord2f(1.0f, 0.0f);
+    glVertex2f(MaxP.x, MinP.y);
+    
+    glTexCoord2f(1.0f, 1.0f);
+    glVertex2f(MaxP.x, MaxP.y);
+
+    // NOTE(casey): Upper triangle
+    glTexCoord2f(0.0f, 0.0f);
+    glVertex2f(MinP.x, MinP.y);
+
+    glTexCoord2f(1.0f, 1.0f);
+    glVertex2f(MaxP.x, MaxP.y);
+
+    glTexCoord2f(0.0f, 1.0f);
+    glVertex2f(MinP.x, MaxP.y);
+    
+    glEnd();    
+}
+
 void RenderFrame(HDC DeviceContext, int WindowWidth, int WindowHeight,
                   render_fuctions *GLFuctions, render_data *Data)
-{
+{ 
     glViewport(0, 0, WindowWidth, WindowHeight);
     
-
-    GLfloat Color[] = {0.0f,
-                       0.2f,
-                       0.0f, 1.0f};
-
-    glBindTexture(GL_TEXTURE_2D, GlobalBlitTextureHandle);
-
-    loaded_bitmap Bitmap = Data->Texture;
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, Bitmap.Width, Bitmap.Height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
-                 Bitmap.Pixel);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-    glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-
     glEnable(GL_TEXTURE_2D);
-
-    glClearColor(Color[0], Color[1], Color[2], Color[3]);
-    glClear(GL_COLOR_BUFFER_BIT);
-
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA); // TODO(barret) figure out blend mode
+            
     glMatrixMode(GL_TEXTURE);
     glLoadIdentity();
 
@@ -151,36 +193,34 @@ void RenderFrame(HDC DeviceContext, int WindowWidth, int WindowHeight,
     glLoadIdentity();
 
     glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
+    // NOTE(barret): for screen coordinate projection 
+    float a = 2.0f/(float)WindowWidth;
+    float b = 2.0f/(float)WindowHeight;    
+    matrix4x4 Projection =
+        {
+            a,  0, 0, 0,
+            0,  b, 0, 0,
+            0,  0, 1, 0,
+            -1, -1, 0, 1
+        };
 
-    glBegin(GL_TRIANGLES);
+    glLoadMatrixf(Projection.m); //NOTE(barret): for using our screen coordinates
 
-    float P = 1.0f;
+    v4 Color = {1.0f, 0.0f,
+                0.0f, 1.0f};
+    
+    ClearScreen(Color);
 
-    glTexCoord2f(0.0f, 0.0f);
-    glVertex2f(-P, -P);
+    v4 BitmapColor {1.0f, 1.0f, 1.0f, 1.0f};
+    DrawBitmap(&Data->Texture, 0, 0, BitmapColor);
 
-    glTexCoord2f(1.0f, 0.0f);
-    glVertex2f(P, -P);
-
-    glTexCoord2f(1.0f, 1.0f);
-    glVertex2f(P, P);
-
-    glTexCoord2f(0.0f, 0.0f);
-    glVertex2f(-P, -P);
-
-    glTexCoord2f(1.0f, 1.0f);
-    glVertex2f(P, P);
-
-    glTexCoord2f(0.0f, 1.0f);
-    glVertex2f(-P, P);
-
-    glEnd();
-    //GLFuctions->glClearBufferfv(GL_COLOR, 0, Color);
 /*
+    //GLFuctions->glClearBufferfv(GL_COLOR, 0, Color);
+
     GLFuctions->glUseProgram(Data->Program); 
 
     GLFuctions->glDrawArrays(GL_TRIANGLES, 0, 3);
-*/    
+*/
+    
     SwapBuffers(DeviceContext);
 }

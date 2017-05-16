@@ -12,6 +12,7 @@
 
 struct loaded_bitmap
 {
+    unsigned int Handle; 
     void *Pixel;
     int Width;
     int Height; 
@@ -23,6 +24,36 @@ loaded_bitmap LoadImage(char *Filename)
 
     int N = 0;
     Bitmap.Pixel = stbi_load(Filename, &Bitmap.Width, &Bitmap.Height, &N, 4);
+
+    unsigned int *SourceDest = (unsigned int *)Bitmap.Pixel;
+        for(int Y = 0;
+            Y < Bitmap.Height;
+            ++Y)
+        {
+            for(int X = 0;
+                X < Bitmap.Width;
+                ++X)
+            {
+                unsigned int C = *SourceDest;
+
+                float R = (float)((C & 0xFF000000) >> 24);
+                float G = (float)((C & 0xFF0000) >> 16);
+                float B = (float)((C & 0xFF00) >> 8);
+                float A = (float)((C & 0xFF) >> 0);
+                float AN = (A / 255.0f);
+
+
+                R = R*AN;
+                G = G*AN;
+                B = B*AN;
+
+                
+                *SourceDest++ = (((unsigned int)(A + 0.5f) << 0) |
+                                 ((unsigned int)(R + 0.5f) << 24) |
+                                 ((unsigned int)(G + 0.5f) << 16) |
+                                 ((unsigned int)(B + 0.5f) << 8));
+            }
+        }
     
     return Bitmap; 
 }
