@@ -30,6 +30,7 @@ typedef void (APIENTRYP PFNGLDELETEVERTEXARRAYSPROC) (GLsizei n, const GLuint *a
 typedef void (APIENTRYP PFNGLDELETEPROGRAMPROC) (GLuint program);
 typedef void (APIENTRYP PFNGLUSEPROGRAMPROC) (GLuint program);
 typedef void (APIENTRYP PFNGLDRAWARRAYSEXTPROC) (GLenum mode, GLint first, GLsizei count);
+typedef BOOL (APIENTRYP PFNWGLSWAPINTERVALEXT) (int interval);
 
 struct render_data
 {
@@ -53,6 +54,7 @@ struct render_fuctions
     PFNGLDELETEPROGRAMPROC glDeleteProgram;
     PFNGLUSEPROGRAMPROC glUseProgram;
     PFNGLDRAWARRAYSEXTPROC glDrawArrays;
+    PFNWGLSWAPINTERVALEXT wglSwapIntervalEXT;
 };
 
 void *GetAnyGLFuncAddress(const char *name)

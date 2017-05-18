@@ -59,6 +59,7 @@ GLuint CompileShaders(render_fuctions *GLFuctions)
 }
 
 static unsigned int TextureHandleCount = 0;
+static GLuint OpenGLDefaultTextureFormat;
 
 void
 Win32InitOpenGL(HWND Window, render_fuctions *Functions, GLuint *Program)
@@ -80,18 +81,6 @@ Win32InitOpenGL(HWND Window, render_fuctions *Functions, GLuint *Program)
                        sizeof(SuggestedPixelFormat), &SuggestedPixelFormat);
     SetPixelFormat(WindowDC, SuggestedPixelFormatIndex, &SuggestedPixelFormat);
     
-    
-    HGLRC OpenGLRC = wglCreateContext(WindowDC);
-    if(wglMakeCurrent(WindowDC, OpenGLRC))
-    {
-        //glGenTextures(1, &GlobalBlitTextureHandle);
-    }
-    else
-    {
-        Assert(false);
-    }
-    
-    ReleaseDC(Window, WindowDC);
         
         
     Functions->glClearBufferfv = (PFNGLCLEARBUFFERFVPROC)GetAnyGLFuncAddress("glClearBufferfv");
@@ -108,12 +97,40 @@ Win32InitOpenGL(HWND Window, render_fuctions *Functions, GLuint *Program)
     Functions->glDeleteProgram = (PFNGLDELETEPROGRAMPROC)GetAnyGLFuncAddress("glDeleteProgram");
     Functions->glUseProgram = (PFNGLUSEPROGRAMPROC)GetAnyGLFuncAddress("glUseProgram");      
     Functions->glDrawArrays = (PFNGLDRAWARRAYSEXTPROC)GetAnyGLFuncAddress("glDrawArrays");
+    Functions->wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXT)GetAnyGLFuncAddress("wglSwapIntervalEXT");
+
+#define GL_FRAMEBUFFER_SRGB 0x8DB9
+#define SRGB8_ALPHA8_EXT 0x8C43
+    
+    OpenGLDefaultTextureFormat = GL_RGBA8;
+    //if(OpenGLExtensionIsAvailable())
+    {
+        OpenGLDefaultTextureFormat = SRGB8_ALPHA8_EXT; 
+    }
+
+    //if(OpenGLExtensionIsAvailable())
+    {
+        glEnable(GL_FRAMEBUFFER_SRGB);
+    }
+    
+    HGLRC OpenGLRC = wglCreateContext(WindowDC);
+    if(wglMakeCurrent(WindowDC, OpenGLRC))
+    {
+        if(Functions->wglSwapIntervalEXT)
+            Functions->wglSwapIntervalEXT(1);   
+    }
+    else
+    {
+        Assert(false);
+    }
+    
+    ReleaseDC(Window, WindowDC);
     /* 
-    GLuint VertexArrayObject = 0;
+       GLuint VertexArrayObject = 0;
         
-    *Program = CompileShaders(Functions);
-    Functions->glCreateVertexArrays(1, &VertexArrayObject);
-    Functions->glBindVertexArray(VertexArrayObject);
+       *Program = CompileShaders(Functions);
+       Functions->glCreateVertexArrays(1, &VertexArrayObject);
+       Functions->glBindVertexArray(VertexArrayObject);
     */    
 }
 
@@ -136,8 +153,8 @@ void DrawBitmap(loaded_bitmap *Bitmap, float X, float Y, v4 Color)
         Bitmap->Handle = ++TextureHandleCount;
         glBindTexture(GL_TEXTURE_2D, Bitmap->Handle);
 
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, Bitmap->Width, Bitmap->Height, 0,
-                     GL_RGBA, GL_UNSIGNED_BYTE, Bitmap->Pixel);
+        glTexImage2D(GL_TEXTURE_2D, 0, OpenGLDefaultTextureFormat, Bitmap->Width, Bitmap->Height, 0,
+                     GL_BGRA_EXT, GL_UNSIGNED_BYTE, Bitmap->Pixel);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
