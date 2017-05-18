@@ -29,7 +29,8 @@
 
 
 typedef uint32_t uint32;
-typedef int32_t int32; 
+typedef int32_t int32;
+typedef uintptr_t umm; 
 
 static bool Running = 1; 
 
@@ -118,6 +119,25 @@ V3Transform(v3 Vec, matrix4x4 Mat)
 #define SCREEN_WIDTH  800
 #define SCREEN_HEIGHT 600
 
+
+inline int
+StringsAreEqual(unsigned int *ALength, char *A, char *B)
+{
+    char *At = B;
+    for(unsigned int *Index = 0;
+        Index < ALength;
+        ++Index, ++At)
+    {
+        if((*At == 0) ||
+           (A[Index] != *At))
+        {
+            return(false)
+        }
+    }
+
+    int Result = (*At == 0);
+    return(Result);
+}
 
 
 #if OPENGL

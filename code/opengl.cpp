@@ -8,6 +8,44 @@
 #include <gl/gl.h>
 
 #include "opengl_header.h"
+        
+#define GL_FRAMEBUFFER_SRGB 0x8DB9
+#define SRGB8_ALPHA8_EXT 0x8C43
+
+struct opengl_info
+{
+    char *Vendor;
+    char *Renderer;
+    char *Version;
+    char *ShadingLanguageVersion;
+    char *Extensions;
+    
+    int EXT_texture_sRGB_decode;
+    int GL_ARB_framebuffer_sRGB; 
+};
+
+opengl_info OpenGLGetInfo()
+{
+    opengl_info Extensions = {};
+
+    Extensions.Vendor = (char *)glGetString(GL_VENDOR);
+    Extensions.Renderer = (char *)glGetString(GL_RENDERER);
+    Extensions.Version = (char *)glGetString(GL_VERSION);
+#if 0
+    Extensions.ShadingLanguageVersion = (char *)glGetString(GL_SHADING_LANGUAGE_VERSION);
+#endif 
+    Extensions.Extensions = (char *)glGetString(GL_EXTENSIONS);
+
+    char *At = Extensions.Extensions; 
+    for(*At)
+    {
+        //TODO(barret): Day 242 TS: 24:35
+        if(StringEquals(Count, At, "EXT_texture_sRGB_decode")){Extensions.EXT_texture_sRGB_decode = true;}
+        if(StringEquals(Count, At, "GL_ARB_framebuffer_sRGB")){Extensions.GL_ARB_framebuffer_sRGB = true;}
+    }
+    
+    return Extensions;
+}
 
 
 GLuint CompileShaders(render_fuctions *GLFuctions)
@@ -99,23 +137,24 @@ Win32InitOpenGL(HWND Window, render_fuctions *Functions, GLuint *Program)
     Functions->glDrawArrays = (PFNGLDRAWARRAYSEXTPROC)GetAnyGLFuncAddress("glDrawArrays");
     Functions->wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXT)GetAnyGLFuncAddress("wglSwapIntervalEXT");
 
-#define GL_FRAMEBUFFER_SRGB 0x8DB9
-#define SRGB8_ALPHA8_EXT 0x8C43
-    
-    OpenGLDefaultTextureFormat = GL_RGBA8;
-    //if(OpenGLExtensionIsAvailable())
-    {
-        OpenGLDefaultTextureFormat = SRGB8_ALPHA8_EXT; 
-    }
-
-    //if(OpenGLExtensionIsAvailable())
-    {
-        glEnable(GL_FRAMEBUFFER_SRGB);
-    }
     
     HGLRC OpenGLRC = wglCreateContext(WindowDC);
     if(wglMakeCurrent(WindowDC, OpenGLRC))
     {
+        opengl_info Extensions = OpenGLGetInfo();
+
+        OpenGLDefaultTextureFormat = GL_RGBA8;
+        if(Extensions.EXT_texture_sRGB_decode)
+        {
+            OpenGLDefaultTextureFormat = SRGB8_ALPHA8_EXT; 
+        }
+
+        if(Extensions.GL_ARB_framebuffer_sRGB)
+        {
+            glEnable(GL_FRAMEBUFFER_SRGB);
+        }
+
+    
         if(Functions->wglSwapIntervalEXT)
             Functions->wglSwapIntervalEXT(1);   
     }
