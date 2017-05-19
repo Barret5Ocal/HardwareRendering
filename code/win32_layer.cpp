@@ -115,23 +115,35 @@ V3Transform(v3 Vec, matrix4x4 Mat)
     return Result; 
 }
 
+inline v4
+V4Transform(v4 Vec, matrix4x4 Mat)
+{ 
+    float x = (Vec.x * Mat._11) + (Vec.y * Mat._12) + (Vec.z * Mat._13) + (Vec.w * Mat._14);
+    float y = (Vec.x * Mat._21) + (Vec.y * Mat._22) + (Vec.z * Mat._23) + (Vec.w * Mat._24);
+    float z = (Vec.x * Mat._31) + (Vec.y * Mat._32) + (Vec.z * Mat._33) + (Vec.w * Mat._34);
+    float w = (Vec.x * Mat._41) + (Vec.y * Mat._42) + (Vec.z * Mat._43) + (Vec.w * Mat._44);
+
+    v4 Result = {x, y, z, w};
+    return Result; 
+}
+
 // define the screen resolution
 #define SCREEN_WIDTH  800
 #define SCREEN_HEIGHT 600
 
 
 inline int
-StringsAreEqual(unsigned int *ALength, char *A, char *B)
+StringsAreEqual(umm ALength, char *A, char *B)
 {
     char *At = B;
-    for(unsigned int *Index = 0;
+    for(umm Index = 0;
         Index < ALength;
         ++Index, ++At)
     {
         if((*At == 0) ||
            (A[Index] != *At))
         {
-            return(false)
+            return(false);
         }
     }
 
@@ -139,6 +151,34 @@ StringsAreEqual(unsigned int *ALength, char *A, char *B)
     return(Result);
 }
 
+inline bool
+IsEndOfLine(char C)
+{
+    bool Result = ((C == '\n') ||
+                   (C == '\r'));
+
+    return Result; 
+}
+
+inline bool
+IsWhiteSpace(char C)
+{
+    bool Result = ((C == ' ')  ||
+                   (C == '\t') ||
+                   (C == '\v') ||
+                   (C == '\f') ||
+                   IsEndOfLine(C));
+    return Result; 
+}
+
+inline bool
+IsAlpha(char C)
+{
+    bool Result = (((C >= 'a') && (C <= 'z')) ||
+                   ((C >= 'A') && (C <= 'Z')));
+
+    return Result; 
+}
 
 #if OPENGL
 #include "opengl.cpp"

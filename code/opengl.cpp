@@ -12,36 +12,64 @@
 #define GL_FRAMEBUFFER_SRGB 0x8DB9
 #define SRGB8_ALPHA8_EXT 0x8C43
 
+#define GL_SHADING_LANGUAGE_VERSION       0x8B8C
+
+#define WGL_CONTEXT_MAJOR_VERSION_ARB           0x2091
+#define WGL_CONTEXT_MINOR_VERSION_ARB           0x2092
+#define WGL_CONTEXT_LAYER_PLANE_ARB             0x2093
+#define WGL_CONTEXT_FLAGS_ARB                   0x2094
+#define WGL_CONTEXT_PROFILE_MASK_ARB            0x9126
+
+#define WGL_CONTEXT_DEBUG_BIT_ARB               0x0001
+#define WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB  0x0002
+
+#define WGL_CONTEXT_CORE_PROFILE_BIT_ARB        0x00000001
+#define WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB 0x00000002
+
 struct opengl_info
 {
+    bool ModernContext;
     char *Vendor;
     char *Renderer;
     char *Version;
     char *ShadingLanguageVersion;
     char *Extensions;
     
-    int EXT_texture_sRGB_decode;
-    int GL_ARB_framebuffer_sRGB; 
+    int GL_EXT_texture_sRGB;
+    int GL_EXT_framebuffer_sRGB;
+    int WGL_EXT_swap_control; 
 };
 
-opengl_info OpenGLGetInfo()
+opengl_info OpenGLGetInfo(bool ModernContext)
 {
     opengl_info Extensions = {};
+
+    Extensions.ModernContext = ModernContext; 
 
     Extensions.Vendor = (char *)glGetString(GL_VENDOR);
     Extensions.Renderer = (char *)glGetString(GL_RENDERER);
     Extensions.Version = (char *)glGetString(GL_VERSION);
-#if 0
-    Extensions.ShadingLanguageVersion = (char *)glGetString(GL_SHADING_LANGUAGE_VERSION);
-#endif 
+
+    if(ModernContext)
+        Extensions.ShadingLanguageVersion = (char *)glGetString(GL_SHADING_LANGUAGE_VERSION);
+    else
+        Extensions.ShadingLanguageVersion = "(none)";
+    
     Extensions.Extensions = (char *)glGetString(GL_EXTENSIONS);
 
     char *At = Extensions.Extensions; 
-    for(*At)
+    while(*At)
     {
+        while(IsWhiteSpace(*At)){++At;}
+        char *End = At;
+        while (*End && !IsWhiteSpace(*End)){++End;}
+
+        umm Count = End - At; 
         //TODO(barret): Day 242 TS: 24:35
-        if(StringEquals(Count, At, "EXT_texture_sRGB_decode")){Extensions.EXT_texture_sRGB_decode = true;}
-        if(StringEquals(Count, At, "GL_ARB_framebuffer_sRGB")){Extensions.GL_ARB_framebuffer_sRGB = true;}
+        if(StringsAreEqual(Count, At, "GL_EXT_texture_sRGB")){Extensions.GL_EXT_texture_sRGB = true;}
+        if(StringsAreEqual(Count, At, "GL_EXT_framebuffer_sRGB")){Extensions.GL_EXT_framebuffer_sRGB = true;}
+        if(StringsAreEqual(Count, At, "WGL_EXT_swap_control")){Extensions.WGL_EXT_swap_control = true;}
+        At = End;
     }
     
     return Extensions;
@@ -117,9 +145,7 @@ Win32InitOpenGL(HWND Window, render_fuctions *Functions, GLuint *Program)
     PIXELFORMATDESCRIPTOR SuggestedPixelFormat;
     DescribePixelFormat(WindowDC, SuggestedPixelFormatIndex,
                        sizeof(SuggestedPixelFormat), &SuggestedPixelFormat);
-    SetPixelFormat(WindowDC, SuggestedPixelFormatIndex, &SuggestedPixelFormat);
-    
-        
+    SetPixelFormat(WindowDC, SuggestedPixelFormatIndex, &SuggestedPixelFormat);        
         
     Functions->glClearBufferfv = (PFNGLCLEARBUFFERFVPROC)GetAnyGLFuncAddress("glClearBufferfv");
     Functions->glCreateShader = (PFNGLCREATESHADERPROC)GetAnyGLFuncAddress("glCreateShader");
@@ -135,28 +161,58 @@ Win32InitOpenGL(HWND Window, render_fuctions *Functions, GLuint *Program)
     Functions->glDeleteProgram = (PFNGLDELETEPROGRAMPROC)GetAnyGLFuncAddress("glDeleteProgram");
     Functions->glUseProgram = (PFNGLUSEPROGRAMPROC)GetAnyGLFuncAddress("glUseProgram");      
     Functions->glDrawArrays = (PFNGLDRAWARRAYSEXTPROC)GetAnyGLFuncAddress("glDrawArrays");
-    Functions->wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXT)GetAnyGLFuncAddress("wglSwapIntervalEXT");
-
-    
+        
     HGLRC OpenGLRC = wglCreateContext(WindowDC);
     if(wglMakeCurrent(WindowDC, OpenGLRC))
     {
-        opengl_info Extensions = OpenGLGetInfo();
-
+        bool ModernContext = false; 
+        wgl_create_context_attribts_arb *wglCreateContextAttribsARB = (wgl_create_context_attribts_arb *)wglGetProcAddress("wglCreateContextAttribsARB");
+        if(wglCreateContextAttribsARB)
+        {
+            // NOTE(barret): this is a modern version of OpenGL
+            int Attribs[] =
+                {
+                    WGL_CONTEXT_MAJOR_VERSION_ARB,   3,
+                    WGL_CONTEXT_MINOR_VERSION_ARB, 0,
+                    WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_DEBUG_BIT_ARB,//|WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
+                    WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB,
+                    0
+                };
+            HGLRC ShareContext = 0;
+            HGLRC ModernGLRC = wglCreateContextAttribsARB(WindowDC, ShareContext, Attribs);
+            if(ModernGLRC)
+            {
+                if(wglMakeCurrent(WindowDC, ModernGLRC))
+                {
+                    ModernContext = true; 
+                    wglDeleteContext(OpenGLRC);
+                    OpenGLRC = ModernGLRC;
+                }
+            }
+        }
+        else
+        {
+            // NOTE(barret): this is an antiquated version of OpenGL
+        }
+        opengl_info Extensions = OpenGLGetInfo(ModernContext);
+      
+                
         OpenGLDefaultTextureFormat = GL_RGBA8;
-        if(Extensions.EXT_texture_sRGB_decode)
+        if(Extensions.GL_EXT_texture_sRGB)
         {
             OpenGLDefaultTextureFormat = SRGB8_ALPHA8_EXT; 
         }
 
-        if(Extensions.GL_ARB_framebuffer_sRGB)
+        if(Extensions.GL_EXT_framebuffer_sRGB)
         {
             glEnable(GL_FRAMEBUFFER_SRGB);
         }
 
-    
-        if(Functions->wglSwapIntervalEXT)
-            Functions->wglSwapIntervalEXT(1);   
+        // NOTE(barret): YOU MUST CREATE A CONTEXT FIRST BEFORE GETTING WGL FUNCTIONS
+        wgl_swap_interval_ext *wglSwapInterval = (wgl_swap_interval_ext *)wglGetProcAddress("wglSwapIntervalEXT");
+
+        if(wglSwapInterval)
+            wglSwapInterval(1);
     }
     else
     {
