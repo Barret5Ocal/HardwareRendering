@@ -11,11 +11,11 @@
 #define PLATFORM_UNIX     3
 
 #if defined(_WIN32)
-    #define PLATFORM PLATFORM_WINDOWS
+#define PLATFORM PLATFORM_WINDOWS
 #elif defined(__APPLE__)
-    #define PLATFORM PLATFORM_MAC
+#define PLATFORM PLATFORM_MAC
 #else
-    #define PLATFORM PLATFORM_UNIX
+#define PLATFORM PLATFORM_UNIX
 #endif
 
 #include <windows.h>
@@ -26,7 +26,6 @@
 #include <stdint.h>
 
 #include "load_image.h"
-
 
 typedef uint32_t uint32;
 typedef int32_t int32;
@@ -96,7 +95,7 @@ union matrix4x4
         float        _21, _22, _23, _24;
         float        _31, _32, _33, _34;
         float        _41, _42, _43, _44;
-
+        
     };
     float e[4][4];
     float m[16];
@@ -110,7 +109,7 @@ V3Transform(v3 Vec, matrix4x4 Mat)
     float y = (Vec.x * Mat._21) + (Vec.y * Mat._22) + (Vec.z * Mat._23) + (1.0f * Mat._24);
     float z = (Vec.x * Mat._31) + (Vec.y * Mat._32) + (Vec.z * Mat._33) + (1.0f * Mat._34);
     float w = (Vec.x * Mat._41) + (Vec.y * Mat._42) + (Vec.z * Mat._43) + (1.0f * Mat._44);
-
+    
     v3 Result = {x, y, z};
     return Result; 
 }
@@ -122,7 +121,7 @@ V4Transform(v4 Vec, matrix4x4 Mat)
     float y = (Vec.x * Mat._21) + (Vec.y * Mat._22) + (Vec.z * Mat._23) + (Vec.w * Mat._24);
     float z = (Vec.x * Mat._31) + (Vec.y * Mat._32) + (Vec.z * Mat._33) + (Vec.w * Mat._34);
     float w = (Vec.x * Mat._41) + (Vec.y * Mat._42) + (Vec.z * Mat._43) + (Vec.w * Mat._44);
-
+    
     v4 Result = {x, y, z, w};
     return Result; 
 }
@@ -146,7 +145,7 @@ StringsAreEqual(umm ALength, char *A, char *B)
             return(false);
         }
     }
-
+    
     int Result = (*At == 0);
     return(Result);
 }
@@ -156,7 +155,7 @@ IsEndOfLine(char C)
 {
     bool Result = ((C == '\n') ||
                    (C == '\r'));
-
+    
     return Result; 
 }
 
@@ -176,7 +175,7 @@ IsAlpha(char C)
 {
     bool Result = (((C >= 'a') && (C <= 'z')) ||
                    ((C >= 'A') && (C <= 'Z')));
-
+    
     return Result; 
 }
 
@@ -211,7 +210,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
             return 0;            
         }break; 
     }
-
+    
     // Handle any messages the switch statement didn't
     return DefWindowProc (hWnd, message, wParam, lParam);
 }
@@ -222,7 +221,7 @@ WinMain(HINSTANCE Instance,
         LPSTR CmdLine,
         int ShowCode)
 {   
-
+    
     WNDCLASS WindowClass = {};
     WindowClass.style = CS_OWNDC|CS_HREDRAW|CS_VREDRAW;
     WindowClass.lpfnWndProc = WindowProc;
@@ -234,7 +233,7 @@ WinMain(HINSTANCE Instance,
     {
         RECT wr = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
         AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
-    
+        
         HWND Window = CreateWindow(WindowClass.lpszClassName,
                                    "HardwareRendering",
                                    WS_OVERLAPPEDWINDOW|WS_VISIBLE,
@@ -246,12 +245,12 @@ WinMain(HINSTANCE Instance,
                                    0,
                                    Instance,
                                    0);
-
+        
         render_fuctions Functions = {};
         render_data Data = {};
-
+        
         loaded_bitmap Bitmap = LoadImage("Wood.png");
-
+        
 #if OPENGL
         GLuint Program = 0;
         Win32InitOpenGL(Window, &Functions, &Program);
@@ -270,7 +269,7 @@ WinMain(HINSTANCE Instance,
         GetClientRect(Window, &Rect);
         int WindowWidth = Rect.right - Rect.left;
         int WindowHeight = Rect.bottom - Rect.top;
-
+        
         float GameUpdateHz = 60;        
         float TargetSecondsPerFrame = 1.0f / (float)GameUpdateHz;
         
@@ -293,11 +292,11 @@ WinMain(HINSTANCE Instance,
                         &Functions, &Data);
 #endif
             ReleaseDC(Window, DeviceContext);
-
+            
         }
         
     }
-
+    
 #if DIRECTX
     CleanD3D();
 #endif 
