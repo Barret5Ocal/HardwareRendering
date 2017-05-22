@@ -31,10 +31,18 @@ typedef void (APIENTRYP PFNGLDELETEPROGRAMPROC) (GLuint program);
 typedef void (APIENTRYP PFNGLUSEPROGRAMPROC) (GLuint program);
 typedef void (APIENTRYP PFNGLDRAWARRAYSEXTPROC) (GLenum mode, GLint first, GLsizei count);
 
-typedef BOOL WINAPI wgl_swap_interval_ext(int interval);
 
 typedef HGLRC WINAPI wgl_create_context_attribts_arb(HDC hdc, HGLRC hShareContext,
                                                      const int *attribList);
+
+typedef BOOL WINAPI wgl_choose_pixel_format_arb(HDC hdc,
+                                                const int *piAttribIList,
+                                                const FLOAT *pfAttribFList,
+                                                UINT nMaxFormats,
+                                                int *piFormats,
+                                                UINT *nNumFormats);
+
+typedef BOOL WINAPI wgl_swap_interval_ext(int interval);
 
 struct render_data
 {
@@ -70,6 +78,6 @@ void *GetAnyGLFuncAddress(const char *name)
         HMODULE module = LoadLibraryA("opengl32.dll");
         p = (void *)GetProcAddress(module, name);
     }
-
+    
     return p;
 }

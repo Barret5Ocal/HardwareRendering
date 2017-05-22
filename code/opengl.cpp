@@ -9,22 +9,31 @@
 
 #include "opengl_header.h"
 
-#define GL_FRAMEBUFFER_SRGB 0x8DB9
-#define SRGB8_ALPHA8_EXT 0x8C43
+#define GL_FRAMEBUFFER_SRGB                       0x8DB9
+#define SRGB8_ALPHA8_EXT                          0x8C43
 
-#define GL_SHADING_LANGUAGE_VERSION       0x8B8C
+#define GL_SHADING_LANGUAGE_VERSION               0x8B8C
 
-#define WGL_CONTEXT_MAJOR_VERSION_ARB           0x2091
-#define WGL_CONTEXT_MINOR_VERSION_ARB           0x2092
-#define WGL_CONTEXT_LAYER_PLANE_ARB             0x2093
-#define WGL_CONTEXT_FLAGS_ARB                   0x2094
-#define WGL_CONTEXT_PROFILE_MASK_ARB            0x9126
+#define WGL_CONTEXT_MAJOR_VERSION_ARB             0x2091
+#define WGL_CONTEXT_MINOR_VERSION_ARB             0x2092
+#define WGL_CONTEXT_LAYER_PLANE_ARB               0x2093
+#define WGL_CONTEXT_FLAGS_ARB                     0x2094
+#define WGL_CONTEXT_PROFILE_MASK_ARB              0x9126
 
-#define WGL_CONTEXT_DEBUG_BIT_ARB               0x0001
-#define WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB  0x0002
+#define WGL_CONTEXT_DEBUG_BIT_ARB                 0x0001
+#define WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB    0x0002
 
-#define WGL_CONTEXT_CORE_PROFILE_BIT_ARB        0x00000001
+#define WGL_CONTEXT_CORE_PROFILE_BIT_ARB          0x00000001
 #define WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB 0x00000002
+
+#define WGL_DRAW_TO_WINDOW_ARB                    0x2001
+#define WGL_SUPPORT_OPENGL_ARB                    0x2010
+#define WGL_DOUBLE_BUFFER_ARB                     0x2011
+#define WGL_PIXEL_TYPE_ARB                        0x2013
+#define WGL_ACCELERATION_ARB                      0x2003
+
+#define WGL_FULL_ACCELERATION_ARB                 0x2027
+#define WGL_TYPE_RGBA_ARB                         0x202B
 
 struct opengl_info
 {
@@ -130,6 +139,7 @@ static GLuint OpenGLDefaultTextureFormat;
 void
 Win32InitOpenGL(HWND Window, render_fuctions *Functions, GLuint *Program)
 {
+    
     HDC WindowDC = GetDC(Window);
     
     PIXELFORMATDESCRIPTOR DesiredPixelFormat = {};
@@ -212,6 +222,25 @@ Win32InitOpenGL(HWND Window, render_fuctions *Functions, GLuint *Program)
         
         if(wglSwapInterval)
             wglSwapInterval(1);
+        
+        /*
+        wgl_choose_pixel_format_arb *wglChoosePixelFormatARB = (wgl_choose_pixel_format_arb *)wglGetProcAddress("wglChoosePixelFormatARB");
+        
+        int IntAttribList[] = 
+        {
+            WGL_DRAW_TO_WINDOW_ARB, GL_TRUE,
+            WGL_ACCELERATION_ARB, WGL_FULL_ACCELERATION_ARB,
+            WGL_SUPPORT_OPENGL_ARB, GL_TRUE,
+            WGL_DOUBLE_BUFFER_ARB, GL_TRUE,
+            WGL_PIXEL_TYPE_ARB, WGL_TYPE_RGBA_ARB,
+            0
+        };
+        
+        float FloatAttribList[] = {0};
+        GLuint ExtendedPick = 0; 
+        wglChoosePixelFormatARB(WindowDC, IntAttribList, FloatAttribList, 
+                                1, &SuggestedPixelFormatIndex, &ExtendedPick);
+    */
     }
     else
     {
