@@ -76,7 +76,7 @@ opengl_info OpenGLGetInfo(bool ModernContext)
         while (*End && !IsWhiteSpace(*End)){++End;}
         
         umm Count = End - At; 
-        //TODO(barret): Day 242 TS: 24:35
+        
         if(StringsAreEqual(Count, At, "GL_EXT_texture_sRGB")){Extensions.GL_EXT_texture_sRGB = true;}
         if(StringsAreEqual(Count, At, "GL_EXT_framebuffer_sRGB")){Extensions.GL_EXT_framebuffer_sRGB = true;}
         if(StringsAreEqual(Count, At, "WGL_EXT_swap_control")){Extensions.WGL_EXT_swap_control = true;}
@@ -265,8 +265,6 @@ Win32InitOpenGL(HWND Window, render_fuctions *Functions, GLuint *Program)
     
     if(wglMakeCurrent(WindowDC, OpenGLRC))
     {
-        
-        
         Functions->glClearBufferfv = (PFNGLCLEARBUFFERFVPROC)GetAnyGLFuncAddress("glClearBufferfv");
         Functions->glCreateShader = (PFNGLCREATESHADERPROC)GetAnyGLFuncAddress("glCreateShader");
         Functions->glShaderSource = (PFNGLSHADERSOURCEPROC)GetAnyGLFuncAddress("glShaderSource");
